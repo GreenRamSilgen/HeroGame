@@ -4,5 +4,11 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Kiran.unity
+    guid: 017a919020de92e40bb9e50bf9a919c1
+  - enabled: 1
+    path: Assets/Scenes/Spring.unity
+    guid: eb5a3b1b630626a40904af6026ca10ce
   m_configObjects: {}
