@@ -4,24 +4,24 @@ using UnityEngine;
 
 public class ItemDetector : MonoBehaviour
 {
+    public GameObject itemUI;
     // Start is called before the first frame update
     void Start()
     {
-        
+        itemUI.SetActive(false);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+    
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.gameObject.tag == "Player")//other.CompareTag("Player"))
+        if (other.gameObject.tag == "Player") //other.CompareTag("Player"))
         {
-            Destroy(other.gameObject); 
+            itemUI.SetActive(true);
         }
+    }
+
+    void OnTriggerExit2D(Collider2D other)
+    {
+        itemUI.SetActive(false);
     }
 
 }
