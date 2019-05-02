@@ -5,19 +5,21 @@ using UnityEngine;
 public class PlayerPositionPredictor : MonoBehaviour
 {
     public PlayerController pc;
+    public BoxCollider2D box;
 
     public float hSpeed;
     public float vSpeed;
     public bool grounded = false;
+    public bool dashing = false;
 
     // Need to standardize
-    public float speed = 0.1F;
+    public float speed = 0.2F;
     public float g = -0.01F;
-    public float vSpeedMax = 1;
+    public float vSpeedMin = -0.1F;
 
+    // allows for movement similar to DPP
     private bool oneKey;
 
-    // Start is called before the first frame update
     void Start()
     {
         hSpeed = 0;
@@ -29,8 +31,8 @@ public class PlayerPositionPredictor : MonoBehaviour
     void FixedUpdate() {
         if (!grounded) {
             vSpeed += g;
-            if (vSpeed > vSpeedMax)
-                vSpeed = vSpeedMax;
+            if (vSpeed < vSpeedMin)
+                vSpeed = vSpeedMin;
         }
         else
             vSpeed = 0;
@@ -39,45 +41,68 @@ public class PlayerPositionPredictor : MonoBehaviour
             if (oneKey) {
                 hSpeed = -hSpeed;
             }
-            else {
-                hSpeed = 0;
-            }
 
             oneKey = false;
         }
-        else if (Input.GetKeyDown(KeyCode.A)) {
+        else if (Input.GetKey(KeyCode.A)) {
             hSpeed = -speed;
             oneKey = true;
         }
-        else if (Input.GetKeyDown(KeyCode.D)) {
+        else if (Input.GetKey(KeyCode.D)) {
             hSpeed = speed;
             oneKey = true;
         }
         else
             hSpeed = 0;
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
         transform.position = new Vector2(transform.position.x + hSpeed, transform.position.y + vSpeed);
     }
-
-
-    private void OnCollisionEnter2D(Collision2D collision) {
+    
+    private void OnCollisionStay2D(Collision2D collision) {
         pc.moveOK = false;
         if (collision.collider.gameObject.tag == "Floor") {
             int points = collision.contactCount;
             ContactPoint2D[] contacts = new ContactPoint2D[points];
-            Debug.Log(collision.GetContacts(contacts));
-            Debug.Log(contacts[0].separation);
+            points = collision.GetContacts(contacts);
+            float bottom = box.bounds.center.y - box.bounds.extents.y;
 
-            //Fix position
-            transform.position = new Vector2(transform.position.x, transform.position.y - (contacts[0].separation * 2));
+            transform.position = new Vector2(transform.position.x, transform.position.y + (contacts[0].point.y - bottom));
 
             grounded = true;
 
-
+        }
+        if (collision.collider.gameObject.tag == "Wall") {
+            int points = collision.contactCount;
+            ContactPoint2D[] contacts = new ContactPoint2D[points];
+            points = collision.GetContacts(contacts);
+            float displacement = 0;
+            if (hSpeed > 0) {
+                displacement = box.bounds.center.x + box.bounds.extents.x;
+                transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x), transform.position.y);
+            }
+            else {
+                displacement = box.bounds.center.x - box.bounds.extents.x;
+                transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement), transform.position.y);
+            }
+        }
+        if (collision.collider.gameObject.tag == "Door") {
+            if (!dashing) {
+                int points = collision.contactCount;
+                ContactPoint2D[] contacts = new ContactPoint2D[points];
+                points = collision.GetContacts(contacts);
+                float displacement = 0;
+                if (hSpeed > 0) {
+                    displacement = box.bounds.center.x + box.bounds.extents.x;
+                    transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x), transform.position.y);
+                }
+                else {
+                    displacement = box.bounds.center.x - box.bounds.extents.x;
+                    transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement), transform.position.y);
+                }
+            }
+            else {
+                Destroy(collision.collider.gameObject);
+            }
         }
     }
 }

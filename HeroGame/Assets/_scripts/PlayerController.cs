@@ -8,20 +8,18 @@ public class PlayerController : MonoBehaviour
     public bool moveOK;
     
     void Start() {
-        moveOK = false;
+        
     }
 
     
 
-    void Update()
+    void FixedUpdate()
     {
 
 
-        // Here do the calculations? do it separately
-        if (moveOK) {
-            transform.position = predict.position;
-            moveOK = false;
-        }
+        // Figure out how to have collision check first before move
+        transform.position = predict.position;
+            
     }
 
 }
