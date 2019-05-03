@@ -9,8 +9,15 @@ public class PlayerPositionPredictor : MonoBehaviour
 
     public float hSpeed;
     public float vSpeed;
-    public bool grounded = false;
-    public bool dashing = false;
+    public bool grounded;
+
+    public bool facingRight;
+
+    public bool dashing;
+    public float dashTimer;
+    public float dashMaxTime;
+    public bool dashOnCooldown;
+    public float dashCooldownTime;
 
     // Need to standardize
     public float speed = 0.2F;
@@ -24,11 +31,20 @@ public class PlayerPositionPredictor : MonoBehaviour
     {
         hSpeed = 0;
         vSpeed = 0;
+        grounded = false;
+
+        facingRight = true;
+
+        dashing = false;
+        dashMaxTime = 0.25F;
+        dashTimer = 0;
+        dashCooldownTime = 3;
 
         oneKey = false;
     }
 
     void FixedUpdate() {
+        // determine gravity
         if (!grounded) {
             vSpeed += g;
             if (vSpeed < vSpeedMin)
@@ -37,24 +53,62 @@ public class PlayerPositionPredictor : MonoBehaviour
         else
             vSpeed = 0;
 
-        if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.A)) {
-            if (oneKey) {
-                hSpeed = -hSpeed;
-            }
+        if (Input.GetKey(KeyCode.LeftShift) && grounded && !dashOnCooldown)
+            dashing = true;
 
-            oneKey = false;
-        }
-        else if (Input.GetKey(KeyCode.A)) {
-            hSpeed = -speed;
-            oneKey = true;
-        }
-        else if (Input.GetKey(KeyCode.D)) {
-            hSpeed = speed;
-            oneKey = true;
+        dashTimer += Time.fixedDeltaTime;
+
+        // horizontal movement
+        if (dashing)
+        {
+            // dash mechanic
+            if (facingRight)
+                hSpeed = speed * 2;
+            else
+                hSpeed = -speed * 2;
+            
+            if (dashTimer > dashMaxTime)
+            {
+                dashTimer = 0;
+                dashing = false;
+                dashOnCooldown = true;
+            }
         }
         else
-            hSpeed = 0;
+        {
+            if (dashTimer > dashCooldownTime)
+            {
+                dashTimer = 0;
+                dashOnCooldown = false;
+            }
 
+            if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.A))
+            {
+                if (oneKey)
+                {
+                    hSpeed = -hSpeed;
+                    facingRight = !facingRight;
+                }
+
+                oneKey = false;
+            }
+            else if (Input.GetKey(KeyCode.A))
+            {
+                hSpeed = -speed;
+                facingRight = false;
+                oneKey = true;
+            }
+            else if (Input.GetKey(KeyCode.D))
+            {
+                hSpeed = speed;
+                facingRight = true;
+                oneKey = true;
+            }
+            else
+                hSpeed = 0;
+        }
+
+        // change position at the end
         transform.position = new Vector2(transform.position.x + hSpeed, transform.position.y + vSpeed);
     }
     
@@ -80,7 +134,7 @@ public class PlayerPositionPredictor : MonoBehaviour
                 displacement = box.bounds.center.x + box.bounds.extents.x;
                 transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x), transform.position.y);
             }
-            else {
+            else if (hSpeed < 0) {
                 displacement = box.bounds.center.x - box.bounds.extents.x;
                 transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement), transform.position.y);
             }
@@ -95,7 +149,7 @@ public class PlayerPositionPredictor : MonoBehaviour
                     displacement = box.bounds.center.x + box.bounds.extents.x;
                     transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x), transform.position.y);
                 }
-                else {
+                else if (hSpeed < 0) {
                     displacement = box.bounds.center.x - box.bounds.extents.x;
                     transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement), transform.position.y);
                 }

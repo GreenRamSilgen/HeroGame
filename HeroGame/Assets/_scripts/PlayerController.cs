@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
 
 
         // Figure out how to have collision check first before move
-        transform.position = predict.position;
+        //transform.position = predict.position;
             
     }
 

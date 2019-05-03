@@ -283,6 +283,12 @@ MonoBehaviour:
   hSpeed: 0
   vSpeed: 0
   grounded: 0
+  facingRight: 0
+  dashing: 0
+  dashTimer: 0
+  dashMaxTime: 0
+  dashOnCooldown: 0
+  dashCooldownTime: 0
   speed: 0.1
   g: -0.01
   vSpeedMin: -1
@@ -581,7 +587,7 @@ GameObject:
   - component: {fileID: 1975519431}
   m_Layer: 0
   m_Name: Door1
-  m_TagString: Untagged
+  m_TagString: Door
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
