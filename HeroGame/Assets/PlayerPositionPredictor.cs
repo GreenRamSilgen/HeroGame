@@ -10,9 +10,10 @@ public class PlayerPositionPredictor : MonoBehaviour
     public float hSpeed;
     public float vSpeed;
     public bool grounded;
-
+    
     public bool facingRight;
 
+    // dashing variables
     public bool dashing;
     public float dashTimer;
     public float dashMaxTime;
@@ -26,6 +27,9 @@ public class PlayerPositionPredictor : MonoBehaviour
 
     // allows for movement similar to DPP
     private bool oneKey;
+
+    // collision variables
+    public float collisionFix = 0.1F;
 
     void Start()
     {
@@ -41,6 +45,64 @@ public class PlayerPositionPredictor : MonoBehaviour
         dashCooldownTime = 3;
 
         oneKey = false;
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        pc.moveOK = false;
+        if (collision.collider.gameObject.tag == "Floor")
+        {
+            int points = collision.contactCount;
+            ContactPoint2D[] contacts = new ContactPoint2D[points];
+            points = collision.GetContacts(contacts);
+            float bottom = box.bounds.center.y - box.bounds.extents.y;
+
+            transform.position = new Vector2(transform.position.x, transform.position.y + (contacts[0].point.y - bottom) - vSpeed);
+
+            grounded = true;
+
+        }
+        if (collision.collider.gameObject.tag == "Wall")
+        {
+            int points = collision.contactCount;
+            ContactPoint2D[] contacts = new ContactPoint2D[points];
+            points = collision.GetContacts(contacts);
+            float displacement = 0;
+            if (hSpeed > 0)
+            {
+                displacement = box.bounds.center.x + box.bounds.extents.x;
+                transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y);
+            }
+            else if (hSpeed < 0)
+            {
+                displacement = box.bounds.center.x - box.bounds.extents.x;
+                transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y);
+            }
+        }
+        if (collision.collider.gameObject.tag == "Door")
+        {
+            if (!dashing)
+            {
+                int points = collision.contactCount;
+                ContactPoint2D[] contacts = new ContactPoint2D[points];
+                points = collision.GetContacts(contacts);
+                float displacement = 0;
+                if (hSpeed > 0)
+                {
+                    displacement = box.bounds.center.x + box.bounds.extents.x;
+                    transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y);
+                }
+                else if (hSpeed < 0)
+                {
+                    displacement = box.bounds.center.x - box.bounds.extents.x;
+                    transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y);
+                }
+            }
+            else
+            {
+                Destroy(collision.collider.gameObject);
+            }
+        }
     }
 
     void FixedUpdate() {
@@ -112,51 +174,5 @@ public class PlayerPositionPredictor : MonoBehaviour
         transform.position = new Vector2(transform.position.x + hSpeed, transform.position.y + vSpeed);
     }
     
-    private void OnCollisionStay2D(Collision2D collision) {
-        pc.moveOK = false;
-        if (collision.collider.gameObject.tag == "Floor") {
-            int points = collision.contactCount;
-            ContactPoint2D[] contacts = new ContactPoint2D[points];
-            points = collision.GetContacts(contacts);
-            float bottom = box.bounds.center.y - box.bounds.extents.y;
-
-            transform.position = new Vector2(transform.position.x, transform.position.y + (contacts[0].point.y - bottom));
-
-            grounded = true;
-
-        }
-        if (collision.collider.gameObject.tag == "Wall") {
-            int points = collision.contactCount;
-            ContactPoint2D[] contacts = new ContactPoint2D[points];
-            points = collision.GetContacts(contacts);
-            float displacement = 0;
-            if (hSpeed > 0) {
-                displacement = box.bounds.center.x + box.bounds.extents.x;
-                transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x), transform.position.y);
-            }
-            else if (hSpeed < 0) {
-                displacement = box.bounds.center.x - box.bounds.extents.x;
-                transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement), transform.position.y);
-            }
-        }
-        if (collision.collider.gameObject.tag == "Door") {
-            if (!dashing) {
-                int points = collision.contactCount;
-                ContactPoint2D[] contacts = new ContactPoint2D[points];
-                points = collision.GetContacts(contacts);
-                float displacement = 0;
-                if (hSpeed > 0) {
-                    displacement = box.bounds.center.x + box.bounds.extents.x;
-                    transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x), transform.position.y);
-                }
-                else if (hSpeed < 0) {
-                    displacement = box.bounds.center.x - box.bounds.extents.x;
-                    transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement), transform.position.y);
-                }
-            }
-            else {
-                Destroy(collision.collider.gameObject);
-            }
-        }
-    }
+    
 }
