@@ -115,8 +115,10 @@ public class PlayerPositionPredictor : MonoBehaviour
         else
             vSpeed = 0;
 
-        if (Input.GetKey(KeyCode.LeftShift) && grounded && !dashOnCooldown)
+        if (Input.GetKey(KeyCode.LeftShift) && grounded && !dashOnCooldown) {
+            dashTimer = 0;
             dashing = true;
+        }
 
         dashTimer += Time.fixedDeltaTime;
 

@@ -11,15 +11,15 @@ public class PlayerController : MonoBehaviour
         
     }
 
-    
-
     void FixedUpdate()
     {
-
-
         // Figure out how to have collision check first before move
+        // edit: no need when can just recorrect position further
         transform.position = predict.position;
-            
+    }
+
+    private void Update() {
+        
     }
 
 }
