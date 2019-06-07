@@ -29,7 +29,14 @@ public class PlayerPositionPredictor : MonoBehaviour
     private bool oneKey;
 
     // collision variables
-    public float collisionFix = 0.1F;
+
+    //stairs
+    public float slope;
+    public float yint;
+    public Vector2 LeftBound;
+    public Vector2 RightBound;
+    public bool stairFollow;
+    public bool dropped;
 
     void Start()
     {
@@ -45,63 +52,89 @@ public class PlayerPositionPredictor : MonoBehaviour
         dashCooldownTime = 3;
 
         oneKey = false;
+
+        stairFollow = false;
+        dropped = false;
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
         pc.moveOK = false;
-        if (collision.collider.gameObject.tag == "Floor")
-        {
-            int points = collision.contactCount;
-            ContactPoint2D[] contacts = new ContactPoint2D[points];
-            points = collision.GetContacts(contacts);
-            float bottom = box.bounds.center.y - box.bounds.extents.y;
 
-            transform.position = new Vector2(transform.position.x, transform.position.y + (contacts[0].point.y - bottom) - vSpeed);
+        int points = collision.contactCount;
+        ContactPoint2D[] contacts = new ContactPoint2D[points];
+        points = collision.GetContacts(contacts);
+
+        if (collision.collider.gameObject.tag == "Floor" && !stairFollow)
+        {
+            float floorDisplace = box.bounds.center.y - box.bounds.extents.y;
+
+            transform.position = new Vector3(transform.position.x, transform.position.y + contacts[0].point.y - floorDisplace - vSpeed, transform.position.z);
 
             grounded = true;
-
         }
         if (collision.collider.gameObject.tag == "Wall")
         {
-            int points = collision.contactCount;
-            ContactPoint2D[] contacts = new ContactPoint2D[points];
-            points = collision.GetContacts(contacts);
             float displacement = 0;
+
             if (hSpeed > 0)
             {
                 displacement = box.bounds.center.x + box.bounds.extents.x;
-                transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y);
+                transform.position = new Vector3(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y, transform.position.z);
             }
             else if (hSpeed < 0)
             {
                 displacement = box.bounds.center.x - box.bounds.extents.x;
-                transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y);
+                transform.position = new Vector3(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y, transform.position.z);
             }
         }
         if (collision.collider.gameObject.tag == "Door")
         {
             if (!dashing)
             {
-                int points = collision.contactCount;
-                ContactPoint2D[] contacts = new ContactPoint2D[points];
-                points = collision.GetContacts(contacts);
                 float displacement = 0;
+
                 if (hSpeed > 0)
                 {
                     displacement = box.bounds.center.x + box.bounds.extents.x;
-                    transform.position = new Vector2(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y);
+                    transform.position = new Vector3(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y, transform.position.z);
                 }
                 else if (hSpeed < 0)
                 {
                     displacement = box.bounds.center.x - box.bounds.extents.x;
-                    transform.position = new Vector2(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y);
+                    transform.position = new Vector3(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y, transform.position.z);
                 }
             }
             else
             {
                 Destroy(collision.collider.gameObject);
             }
+        }
+        if (collision.collider.gameObject.tag == "Stair" && !dropped) {
+            StairProperties stair = collision.collider.gameObject.GetComponent<StairProperties>();
+            grounded = true;
+
+            yint = stair.yint;
+            slope = stair.slope;
+            LeftBound = stair.LeftBound;
+            RightBound = stair.RightBound;
+
+            if (transform.position.y < slope * transform.position.x + yint) {
+                dropped = true;
+            }
+            else {
+                stairFollow = true;
+            }
+
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision) {
+        if (collision.collider.gameObject.tag == "Stair") {
+            stairFollow = false;
+
+            if (dropped)
+                dropped = false;
         }
     }
 
@@ -115,7 +148,7 @@ public class PlayerPositionPredictor : MonoBehaviour
         else
             vSpeed = 0;
 
-        if (Input.GetKey(KeyCode.LeftShift) && grounded && !dashOnCooldown) {
+        if (Input.GetKey(KeyCode.LeftShift) && grounded && !dashOnCooldown && !dashing) {
             dashTimer = 0;
             dashing = true;
         }
@@ -172,9 +205,32 @@ public class PlayerPositionPredictor : MonoBehaviour
                 hSpeed = 0;
         }
 
+        if (Input.GetKey(KeyCode.S)) {
+            stairFollow = false;
+            grounded = false;
+            dropped = true;
+        }
+
         // change position at the end
-        transform.position = new Vector2(transform.position.x + hSpeed, transform.position.y + vSpeed);
+        if (stairFollow) {
+            float calcx = transform.position.x + hSpeed;
+            float calcy = slope * calcx + yint;
+
+            // fix magic numbers
+            if (calcx < LeftBound.x) {
+                transform.position = new Vector3(calcx, LeftBound.y + box.bounds.extents.y, transform.position.z);
+            }
+            else if (calcx > RightBound.x) {
+                transform.position = new Vector3(calcx, RightBound.y + box.bounds.extents.y, transform.position.z);
+            }
+            else {
+                transform.position = new Vector3(calcx, calcy + box.bounds.extents.y, transform.position.z);
+            }
+        }
+        else {
+            transform.position = new Vector3(transform.position.x + hSpeed, transform.position.y + vSpeed, transform.position.z);
+        }
+
+        
     }
-    
-    
 }
