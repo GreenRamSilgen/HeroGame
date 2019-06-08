@@ -9,6 +9,7 @@ TagManager:
   - Wall
   - Door
   - Stair
+  - Environment
   layers:
   - Default
   - TransparentFX

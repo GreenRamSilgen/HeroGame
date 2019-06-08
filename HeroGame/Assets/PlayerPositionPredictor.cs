@@ -65,6 +65,41 @@ public class PlayerPositionPredictor : MonoBehaviour
         ContactPoint2D[] contacts = new ContactPoint2D[points];
         points = collision.GetContacts(contacts);
 
+
+        if (collision.collider.gameObject.tag == "Environment") {
+            // check if corner
+            if (contacts[0].normal != contacts[1].normal) {
+                float displacement = 0;
+
+                //check if bottom corners
+                Vector2 cornerNormal = contacts[0].normal + contacts[1].normal;
+
+                if (cornerNormal.y < 0) {
+                    if (vSpeed < 0) {
+                        if (hSpeed > 0) {
+                            displacement = box.bounds.center.x + box.bounds.extents.x;
+                            transform.position = new Vector3(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y, transform.position.z);
+                        }
+                        else if (hSpeed < 0) {
+                            displacement = box.bounds.center.x - box.bounds.extents.x;
+                            transform.position = new Vector3(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y, transform.position.z);
+                        }
+                    }
+                    else if (vSpeed > 0) {
+                        displacement = box.bounds.center.y - box.bounds.extents.y;
+
+                        transform.position = new Vector3(transform.position.x + hSpeed, transform.position.y + (Mathf.Min(contacts[0].point.x, contacts[1].point.x) - displacement) - vSpeed, transform.position.z);
+                    }
+                }
+                else {
+
+                }
+
+            // if not check which side
+
+            // fix from there using velocity
+        }
+        /*
         if (collision.collider.gameObject.tag == "Floor" && !stairFollow)
         {
             float floorDisplace = box.bounds.center.y - box.bounds.extents.y;
@@ -72,6 +107,8 @@ public class PlayerPositionPredictor : MonoBehaviour
             transform.position = new Vector3(transform.position.x, transform.position.y + contacts[0].point.y - floorDisplace - vSpeed, transform.position.z);
 
             grounded = true;
+
+            //Debug.Log()
         }
         if (collision.collider.gameObject.tag == "Wall")
         {
@@ -88,6 +125,7 @@ public class PlayerPositionPredictor : MonoBehaviour
                 transform.position = new Vector3(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y, transform.position.z);
             }
         }
+        */
         if (collision.collider.gameObject.tag == "Door")
         {
             if (!dashing)
@@ -205,10 +243,17 @@ public class PlayerPositionPredictor : MonoBehaviour
                 hSpeed = 0;
         }
 
-        if (Input.GetKey(KeyCode.S)) {
+        if (Input.GetKey(KeyCode.S) && stairFollow == true) {
             stairFollow = false;
             grounded = false;
             dropped = true;
+        }
+
+        if (Input.GetKey(KeyCode.W) && grounded == true) {
+            grounded = false;
+            vSpeed = 0.3F;
+
+            stairFollow = false;
         }
 
         // change position at the end
