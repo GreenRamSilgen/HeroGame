@@ -56,7 +56,7 @@ public class PlayerPositionPredictor : MonoBehaviour
         stairFollow = false;
         dropped = false;
     }
-
+                        
     private void OnCollisionStay2D(Collision2D collision)
     {
         pc.moveOK = false;
@@ -68,32 +68,55 @@ public class PlayerPositionPredictor : MonoBehaviour
 
         if (collision.collider.gameObject.tag == "Environment") {
             // check if corner
-            if (contacts[0].normal != contacts[1].normal) {
+            if (contacts[0].normal != contacts[1].normal || !(contacts[0].normal == -contacts[1].normal)) {
                 float displacement = 0;
+
+                // make reading easier and code base smaller
+                float minx = Mathf.Min(contacts[0].point.x, contacts[1].point.x);
+                float miny = Mathf.Min(contacts[0].point.y, contacts[1].point.y);
+                float maxx = Mathf.Min(contacts[0].point.x, contacts[1].point.x);
+                float maxy = Mathf.Min(contacts[0].point.y, contacts[1].point.y);
 
                 //check if bottom corners
                 Vector2 cornerNormal = contacts[0].normal + contacts[1].normal;
 
+                // for bottom corners
                 if (cornerNormal.y < 0) {
+                    // if coming from above, act like a wall
                     if (vSpeed < 0) {
                         if (hSpeed > 0) {
                             displacement = box.bounds.center.x + box.bounds.extents.x;
-                            transform.position = new Vector3(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y, transform.position.z);
+                            transform.position = new Vector3(transform.position.x - (displacement - minx) - hSpeed, transform.position.y, transform.position.z);
                         }
                         else if (hSpeed < 0) {
                             displacement = box.bounds.center.x - box.bounds.extents.x;
-                            transform.position = new Vector3(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y, transform.position.z);
+                            transform.position = new Vector3(transform.position.x + (maxx - displacement) - hSpeed, transform.position.y, transform.position.z);
                         }
                     }
+                    // if coming from below, act like a ceiling
                     else if (vSpeed > 0) {
-                        displacement = box.bounds.center.y - box.bounds.extents.y;
+                        displacement = box.bounds.center.y + box.bounds.extents.y;
 
-                        transform.position = new Vector3(transform.position.x + hSpeed, transform.position.y + (Mathf.Min(contacts[0].point.x, contacts[1].point.x) - displacement) - vSpeed, transform.position.z);
+                        transform.position = new Vector3(transform.position.x, transform.position.y - (displacement - miny) - vSpeed, transform.position.z);
+                        vSpeed = -vSpeed;
                     }
                 }
+                // for top corners
                 else {
+                    // if coming from above, act like a floor
+                    if (vSpeed < 0) {
+                        displacement = box.bounds.center.y - box.bounds.extents.y;
 
+                        transform.position = new Vector3(transform.position.x, transform.position.y + contacts[0].point.y - displacement - vSpeed, transform.position.z);
+
+                        grounded = true;
+                    }
+                    // if coming from below, act like a wall
+                    else if (vSpeed > 0) {
+
+                    }
                 }
+            }
 
             // if not check which side
 
