@@ -66,7 +66,20 @@ public class PlayerPositionPredictor : MonoBehaviour
         points = collision.GetContacts(contacts);
 
 
-        if (collision.collider.gameObject.tag == "Environment") {
+        if (collision.collider.tag == "Environment") {
+            // VERSION 4 OF PHYSICS: USE RAYCAST TO DETERMINE GENERAL PLACING, THEN CORRECT USING COLLISION DETECTION
+
+            
+            // VERSION 3 OF PHYSICS: USES ONE TAG AND CALCULATES CORRECTION BASED ON VECTORS AND CENTERS
+
+            //for (int i = 0; i < collision.collider.)
+
+            Vector2 collisionCenter = new Vector2((contacts[0].point.x + contacts[1].point.x) / 2, (contacts[0].point.x + contacts[1].point.x) / 2);
+            //collision.collider.OverlapPoint
+
+
+            // VERSION 2 OF PHYSICS: USES ONE TAG BUT CALCULATES ONLY BOX COLLIDERS AND DOES SO INEFFICIENTLY
+            /*
             // check if corner
             if (contacts[0].normal != contacts[1].normal || !(contacts[0].normal == -contacts[1].normal)) {
                 float displacement = 0;
@@ -121,7 +134,10 @@ public class PlayerPositionPredictor : MonoBehaviour
             // if not check which side
 
             // fix from there using velocity
+            */
         }
+
+        // VERSION 1 OF PHYSICS: USES SEPARATE TAGS FOR EACH COLLISION TYPE AND SEPARATE PHYSICS
         /*
         if (collision.collider.gameObject.tag == "Floor" && !stairFollow)
         {
@@ -296,6 +312,19 @@ public class PlayerPositionPredictor : MonoBehaviour
             }
         }
         else {
+            Vector2 change = new Vector2(hSpeed, vSpeed);
+            
+            // raycast check for collision
+            // how many rays? how to check for everything?
+            // work basic for now (ground, sides from center)
+            RaycastHit2D [] hits = new RaycastHit2D[0];
+
+
+            int casts = box.Raycast(change, hits, change.magnitude);
+
+            
+
+            // then change position
             transform.position = new Vector3(transform.position.x + hSpeed, transform.position.y + vSpeed, transform.position.z);
         }
 
