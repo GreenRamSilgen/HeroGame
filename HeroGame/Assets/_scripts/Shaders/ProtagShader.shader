@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "Shaders101/Simple Texture"
+Shader "ProtagShader"
 {
 	Properties
 	{

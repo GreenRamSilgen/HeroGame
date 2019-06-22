@@ -19,8 +19,8 @@ TagManager:
   - UI
   - 
   - 
-  - Background
-  - 
+  - Protagonist
+  - Environment
   - 
   - 
   - 
@@ -44,7 +44,7 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: Backgorund
+  - name: Background
     uniqueID: 1173455401
     locked: 0
   - name: Default

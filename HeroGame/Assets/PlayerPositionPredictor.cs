@@ -29,6 +29,8 @@ public class PlayerPositionPredictor : MonoBehaviour
     private bool oneKey;
 
     // collision variables
+    private Vector2[] boxPoints;
+    private bool[] pointContacted;
 
     //stairs
     public float slope;
@@ -53,6 +55,16 @@ public class PlayerPositionPredictor : MonoBehaviour
 
         oneKey = false;
 
+        // set up box endpoints for ease of use later with collision detection
+        // top left corner, clock wise rotation
+        boxPoints = new Vector2[4];
+        boxPoints[0] = new Vector2(-box.bounds.extents.x, box.bounds.extents.y);
+        boxPoints[1] = new Vector2(box.bounds.extents.x, box.bounds.extents.y);
+        boxPoints[2] = new Vector2(box.bounds.extents.x, -box.bounds.extents.y);
+        boxPoints[3] = new Vector2(-box.bounds.extents.x, -box.bounds.extents.y);
+
+        pointContacted = new bool[4];
+
         stairFollow = false;
         dropped = false;
     }
@@ -66,105 +78,10 @@ public class PlayerPositionPredictor : MonoBehaviour
         points = collision.GetContacts(contacts);
 
 
-        if (collision.collider.tag == "Environment") {
-            // VERSION 4 OF PHYSICS: USE RAYCAST TO DETERMINE GENERAL PLACING, THEN CORRECT USING COLLISION DETECTION
-
-            
-            // VERSION 3 OF PHYSICS: USES ONE TAG AND CALCULATES CORRECTION BASED ON VECTORS AND CENTERS
-
-            //for (int i = 0; i < collision.collider.)
-
-            Vector2 collisionCenter = new Vector2((contacts[0].point.x + contacts[1].point.x) / 2, (contacts[0].point.x + contacts[1].point.x) / 2);
-            //collision.collider.OverlapPoint
-
-
-            // VERSION 2 OF PHYSICS: USES ONE TAG BUT CALCULATES ONLY BOX COLLIDERS AND DOES SO INEFFICIENTLY
-            /*
-            // check if corner
-            if (contacts[0].normal != contacts[1].normal || !(contacts[0].normal == -contacts[1].normal)) {
-                float displacement = 0;
-
-                // make reading easier and code base smaller
-                float minx = Mathf.Min(contacts[0].point.x, contacts[1].point.x);
-                float miny = Mathf.Min(contacts[0].point.y, contacts[1].point.y);
-                float maxx = Mathf.Min(contacts[0].point.x, contacts[1].point.x);
-                float maxy = Mathf.Min(contacts[0].point.y, contacts[1].point.y);
-
-                //check if bottom corners
-                Vector2 cornerNormal = contacts[0].normal + contacts[1].normal;
-
-                // for bottom corners
-                if (cornerNormal.y < 0) {
-                    // if coming from above, act like a wall
-                    if (vSpeed < 0) {
-                        if (hSpeed > 0) {
-                            displacement = box.bounds.center.x + box.bounds.extents.x;
-                            transform.position = new Vector3(transform.position.x - (displacement - minx) - hSpeed, transform.position.y, transform.position.z);
-                        }
-                        else if (hSpeed < 0) {
-                            displacement = box.bounds.center.x - box.bounds.extents.x;
-                            transform.position = new Vector3(transform.position.x + (maxx - displacement) - hSpeed, transform.position.y, transform.position.z);
-                        }
-                    }
-                    // if coming from below, act like a ceiling
-                    else if (vSpeed > 0) {
-                        displacement = box.bounds.center.y + box.bounds.extents.y;
-
-                        transform.position = new Vector3(transform.position.x, transform.position.y - (displacement - miny) - vSpeed, transform.position.z);
-                        vSpeed = -vSpeed;
-                    }
-                }
-                // for top corners
-                else {
-                    // if coming from above, act like a floor
-                    if (vSpeed < 0) {
-                        displacement = box.bounds.center.y - box.bounds.extents.y;
-
-                        transform.position = new Vector3(transform.position.x, transform.position.y + contacts[0].point.y - displacement - vSpeed, transform.position.z);
-
-                        grounded = true;
-                    }
-                    // if coming from below, act like a wall
-                    else if (vSpeed > 0) {
-
-                    }
-                }
-            }
-
-            // if not check which side
-
-            // fix from there using velocity
-            */
-        }
-
-        // VERSION 1 OF PHYSICS: USES SEPARATE TAGS FOR EACH COLLISION TYPE AND SEPARATE PHYSICS
-        /*
-        if (collision.collider.gameObject.tag == "Floor" && !stairFollow)
+        if (collision.collider.tag == "Environment")
         {
-            float floorDisplace = box.bounds.center.y - box.bounds.extents.y;
 
-            transform.position = new Vector3(transform.position.x, transform.position.y + contacts[0].point.y - floorDisplace - vSpeed, transform.position.z);
-
-            grounded = true;
-
-            //Debug.Log()
         }
-        if (collision.collider.gameObject.tag == "Wall")
-        {
-            float displacement = 0;
-
-            if (hSpeed > 0)
-            {
-                displacement = box.bounds.center.x + box.bounds.extents.x;
-                transform.position = new Vector3(transform.position.x - (displacement - contacts[0].point.x) - hSpeed, transform.position.y, transform.position.z);
-            }
-            else if (hSpeed < 0)
-            {
-                displacement = box.bounds.center.x - box.bounds.extents.x;
-                transform.position = new Vector3(transform.position.x + (contacts[0].point.x - displacement) - hSpeed, transform.position.y, transform.position.z);
-            }
-        }
-        */
         if (collision.collider.gameObject.tag == "Door")
         {
             if (!dashing)
@@ -312,20 +229,84 @@ public class PlayerPositionPredictor : MonoBehaviour
             }
         }
         else {
+            bool envHit = false;
             Vector2 change = new Vector2(hSpeed, vSpeed);
             
             // raycast check for collision
-            // how many rays? how to check for everything?
-            // work basic for now (ground, sides from center)
-            RaycastHit2D [] hits = new RaycastHit2D[0];
+            RaycastHit2D [] hits = new RaycastHit2D[4];
+
+            //check each point with raycast for possible collision
+            for (int i = 0; i < hits.Length; i++)
+            {
+                pointContacted[i] = false;
+                hits[i] = Physics2D.Raycast(boxPoints[i] + (Vector2)transform.position, change, change.magnitude, LayerMask.NameToLayer("Environment"));
+
+                if (hits[i].collider != null)
+                {
+                    envHit = true;
+                    pointContacted[i] = true;
+                }
+            }
+
+            // then change position based on points
+            if (envHit)
+            {
+                // check doubles (hitting an entire side)
+                if (pointContacted[0] && pointContacted[1] && (hits[0].normal == hits[1].normal))
+                {
+                    //top
+                    //check for corners
+                    if (pointContacted[3] && hits[3].normal == Vector2.right)
+                    {
+                        transform.position = new Vector2();
+                    }
+                    else if (pointContacted[2] && hits[2].normal == Vector2.left)
+                    {
+
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else if (pointContacted[1] && pointContacted[2] && hits[1].normal == Vector2.left)
+                {
+                    //right
+                }
+                else if (pointContacted[2] && pointContacted[3] && (hits[2].normal == hits[3].normal))
+                {
+                    //bottom
+                    //check for corners
+                    if (pointContacted[3] && hits[3].normal == Vector2.right)
+                    {
+                        
+                    }
+                    else if (pointContacted[2] && hits[2].normal == Vector2.left)
+                    {
+
+                    }
+                    else
+                    {
+                        transform.position = new Vector2((hits[2].point.x + hits[3].point.x) / 2, hits[2].point.y + box.bounds.extents.y);
+                    }
+
+                    grounded = true;
+                }
+                else if (pointContacted[3] && pointContacted[0] && hits[3].normal == Vector2.right)
+                {
+                    //left
+                }
+                
 
 
-            int casts = box.Raycast(change, hits, change.magnitude);
-
+            }
+            else
+            {
+                transform.position = new Vector3(transform.position.x + hSpeed, transform.position.y + vSpeed, transform.position.z);
+            }
             
 
-            // then change position
-            transform.position = new Vector3(transform.position.x + hSpeed, transform.position.y + vSpeed, transform.position.z);
+            
         }
 
         
