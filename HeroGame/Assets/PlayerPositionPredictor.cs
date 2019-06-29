@@ -31,6 +31,7 @@ public class PlayerPositionPredictor : MonoBehaviour
     // collision variables
     private Vector2[] boxPoints;
     private bool[] pointContacted;
+    public float colBuffer = 0.01f;
 
     //stairs
     public float slope;
@@ -251,22 +252,48 @@ public class PlayerPositionPredictor : MonoBehaviour
             // then change position based on points
             if (envHit)
             {
+                float correctX = box.bounds.extents.x + colBuffer;
+                float correctY = box.bounds.extents.y + colBuffer;
                 // check doubles (hitting an entire side)
+                for (int i = 0; i < pointContacted.Length; i++)
+                {
+                    if (pointContacted[i] && pointContacted[(i + 1) % pointContacted.Length] && (hits[i].normal == hits[(i + 1) % pointContacted.Length].normal))
+                    {
+                        Vector2 leftCompare = new Vector2();
+                        Vector2 rightCompare = new Vector2();
+
+                        if (pointContacted[(i - 1) % pointContacted.Length] && hits[(i - 1) % pointContacted.Length].normal.Equals(leftCompare))
+                        {
+                            transform.position = new Vector2();
+                        }
+                        else if (pointContacted[(i + 2) % pointContacted.Length] && hits[(i + 2) % pointContacted.Length].normal.Equals(rightCompare))
+                        {
+                            transform.position = new Vector2();
+                        }
+                        else
+                        {
+                            transform.position = new Vector2();
+                        }
+                    }
+                }
+
+
+
                 if (pointContacted[0] && pointContacted[1] && (hits[0].normal == hits[1].normal))
                 {
                     //top
                     //check for corners
                     if (pointContacted[3] && hits[3].normal == Vector2.right)
                     {
-                        transform.position = new Vector2();
+                        transform.position = new Vector2(hits[3].point.x + correctX, hits[0].point.y - correctY);
                     }
                     else if (pointContacted[2] && hits[2].normal == Vector2.left)
                     {
-
+                        transform.position = new Vector2(hits[2].point.x - correctX, hits[0].point.y - correctY);
                     }
                     else
                     {
-
+                        transform.position = new Vector2((hits[0].point.x + hits[1].point.x) / 2, hits[0].point.y - correctY);
                     }
                 }
                 else if (pointContacted[1] && pointContacted[2] && hits[1].normal == Vector2.left)
@@ -276,7 +303,6 @@ public class PlayerPositionPredictor : MonoBehaviour
                 else if (pointContacted[2] && pointContacted[3] && (hits[2].normal == hits[3].normal))
                 {
                     //bottom
-                    //check for corners
                     if (pointContacted[3] && hits[3].normal == Vector2.right)
                     {
                         
@@ -287,7 +313,7 @@ public class PlayerPositionPredictor : MonoBehaviour
                     }
                     else
                     {
-                        transform.position = new Vector2((hits[2].point.x + hits[3].point.x) / 2, hits[2].point.y + box.bounds.extents.y);
+                        transform.position = new Vector2((hits[2].point.x + hits[3].point.x) / 2, hits[2].point.y + box.bounds.extents.y + colBuffer);
                     }
 
                     grounded = true;
